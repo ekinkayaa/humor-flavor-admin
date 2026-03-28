@@ -8,9 +8,7 @@ interface HumorFlavor {
   id: number;
   name: string;
   description: string | null;
-  is_active: boolean;
   created_at: string;
-  updated_at: string;
 }
 
 const S = {
@@ -62,7 +60,6 @@ function CreateFlavorModal({
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
@@ -74,7 +71,7 @@ function CreateFlavorModal({
     setError(null);
     const { data, error } = await supabase
       .from("humor_flavors")
-      .insert({ name: name.trim(), description: description.trim() || null, is_active: isActive })
+      .insert({ name: name.trim(), description: description.trim() || null })
       .select()
       .single();
     setLoading(false);
@@ -95,10 +92,6 @@ function CreateFlavorModal({
             <label style={S.label}>Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What makes this flavor unique?" rows={3}
               style={{ ...S.input, resize: "vertical" as const }} />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <input type="checkbox" id="active-create" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            <label htmlFor="active-create" style={{ fontSize: 13, color: "var(--text)", cursor: "pointer" }}>Active</label>
           </div>
           {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
@@ -124,7 +117,6 @@ function EditFlavorModal({
 }) {
   const [name, setName] = useState(flavor.name);
   const [description, setDescription] = useState(flavor.description ?? "");
-  const [isActive, setIsActive] = useState(flavor.is_active);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
@@ -136,7 +128,7 @@ function EditFlavorModal({
     setError(null);
     const { data, error } = await supabase
       .from("humor_flavors")
-      .update({ name: name.trim(), description: description.trim() || null, is_active: isActive })
+      .update({ name: name.trim(), description: description.trim() || null })
       .eq("id", flavor.id)
       .select()
       .single();
@@ -158,10 +150,6 @@ function EditFlavorModal({
             <label style={S.label}>Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               style={{ ...S.input, resize: "vertical" as const }} />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <input type="checkbox" id="active-edit" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            <label htmlFor="active-edit" style={{ fontSize: 13, color: "var(--text)", cursor: "pointer" }}>Active</label>
           </div>
           {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
@@ -281,22 +269,6 @@ export default function HumorFlavorsPage() {
                 flexWrap: "wrap",
               }}
             >
-              {/* Status badge */}
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "3px 10px",
-                  borderRadius: 999,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: flavor.is_active ? "var(--success-bg)" : "var(--tag-bg)",
-                  color: flavor.is_active ? "var(--success)" : "var(--tag-text)",
-                  flexShrink: 0,
-                }}
-              >
-                {flavor.is_active ? "Active" : "Inactive"}
-              </span>
-
               {/* Name + description */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 3 }}>

@@ -26,7 +26,6 @@ interface HumorFlavor {
   id: number;
   name: string;
   description: string | null;
-  is_active: boolean;
 }
 
 interface HumorFlavorStep {
@@ -415,23 +414,10 @@ export default function FlavorDetailPage() {
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <div style={{ marginBottom: 8 }}>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", margin: 0 }}>
                 {flavor.name}
               </h1>
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "3px 10px",
-                  borderRadius: 999,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: flavor.is_active ? "var(--success-bg)" : "var(--tag-bg)",
-                  color: flavor.is_active ? "var(--success)" : "var(--tag-text)",
-                }}
-              >
-                {flavor.is_active ? "Active" : "Inactive"}
-              </span>
             </div>
             {flavor.description && (
               <p style={{ fontSize: 14, color: "var(--text2)", margin: 0 }}>{flavor.description}</p>

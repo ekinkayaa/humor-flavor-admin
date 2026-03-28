@@ -10,7 +10,6 @@ const ACCEPTED = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/g
 interface HumorFlavor {
   id: number;
   name: string;
-  is_active: boolean;
 }
 
 interface Caption {
@@ -80,7 +79,7 @@ export default function TestFlavorPage() {
   useEffect(() => {
     supabase
       .from("humor_flavors")
-      .select("id, name, is_active")
+      .select("id, name")
       .order("name", { ascending: true })
       .then(({ data }) => setFlavors(data ?? []));
   }, []);
@@ -229,7 +228,7 @@ export default function TestFlavorPage() {
                 <option value="">Choose a flavor…</option>
                 {flavors.map((f) => (
                   <option key={f.id} value={String(f.id)}>
-                    {f.name}{!f.is_active ? " (inactive)" : ""}
+                    {f.name}
                   </option>
                 ))}
               </select>
