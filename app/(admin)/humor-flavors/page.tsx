@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase-client";
 
 interface HumorFlavor {
   id: number;
-  name: string;
+  slug: string;
   description: string | null;
-  created_at: string;
+  created_datetime_utc: string;
 }
 
 const S = {
@@ -51,111 +51,72 @@ const S = {
   } as React.CSSProperties,
 };
 
-function CreateFlavorModal({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: (f: HumorFlavor) => void;
-}) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) { setError("Name is required"); return; }
-    setLoading(true);
-    setError(null);
-    const { data, error } = await supabase
-      .from("humor_flavors")
-      .insert({ name: name.trim(), description: description.trim() || null })
-      .select()
-      .single();
-    setLoading(false);
-    if (error) { setError(error.message); return; }
-    onCreated(data as HumorFlavor);
-  }
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "32px 32px 28px", width: "100%", maxWidth: 460 }} className="animate-in">
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 20 }}>New Humor Flavor</h2>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <label style={S.label}>Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Deadpan Office Humor" style={S.input} autoFocus />
-          </div>
-          <div>
-            <label style={S.label}>Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What makes this flavor unique?" rows={3}
-              style={{ ...S.input, resize: "vertical" as const }} />
-          </div>
-          {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
-            <button type="button" onClick={onClose} style={S.btn("secondary")}>Cancel</button>
-            <button type="submit" disabled={loading} style={{ ...S.btn("primary"), opacity: loading ? 0.6 : 1 }}>
-              {loading ? "Creating…" : "Create Flavor"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function EditFlavorModal({
+function FlavorModal({
+  mode,
   flavor,
   onClose,
-  onUpdated,
+  onSave,
 }: {
-  flavor: HumorFlavor;
+  mode: "create" | "edit";
+  flavor?: HumorFlavor;
   onClose: () => void;
-  onUpdated: (f: HumorFlavor) => void;
+  onSave: (f: HumorFlavor) => void;
 }) {
-  const [name, setName] = useState(flavor.name);
-  const [description, setDescription] = useState(flavor.description ?? "");
+  const [slug, setSlug] = useState(flavor?.slug ?? "");
+  const [description, setDescription] = useState(flavor?.description ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError("Name is required"); return; }
+    if (!slug.trim()) { setError("Slug / name is required"); return; }
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase
-      .from("humor_flavors")
-      .update({ name: name.trim(), description: description.trim() || null })
-      .eq("id", flavor.id)
-      .select()
-      .single();
+
+    const payload = { slug: slug.trim(), description: description.trim() || null };
+    const { data, error } =
+      mode === "create"
+        ? await supabase.from("humor_flavors").insert(payload).select().single()
+        : await supabase.from("humor_flavors").update(payload).eq("id", flavor!.id).select().single();
+
     setLoading(false);
     if (error) { setError(error.message); return; }
-    onUpdated(data as HumorFlavor);
+    onSave(data as HumorFlavor);
   }
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "32px 32px 28px", width: "100%", maxWidth: 460 }} className="animate-in">
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 20 }}>Edit Humor Flavor</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 20 }}>
+          {mode === "create" ? "New Humor Flavor" : "Edit Humor Flavor"}
+        </h2>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={S.label}>Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} style={S.input} autoFocus />
+            <label style={S.label}>Slug / Name *</label>
+            <input
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="e.g. deadpan-office-humor"
+              style={S.input}
+              autoFocus
+            />
           </div>
           <div>
             <label style={S.label}>Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-              style={{ ...S.input, resize: "vertical" as const }} />
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What makes this flavor unique?"
+              rows={3}
+              style={{ ...S.input, resize: "vertical" as const }}
+            />
           </div>
           {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
             <button type="button" onClick={onClose} style={S.btn("secondary")}>Cancel</button>
             <button type="submit" disabled={loading} style={{ ...S.btn("primary"), opacity: loading ? 0.6 : 1 }}>
-              {loading ? "Saving…" : "Save Changes"}
+              {loading ? "Saving…" : mode === "create" ? "Create Flavor" : "Save Changes"}
             </button>
           </div>
         </form>
@@ -169,22 +130,21 @@ export default function HumorFlavorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [editFlavor, setEditFlavor] = useState<HumorFlavor | null>(null);
+  const [modal, setModal] = useState<{ mode: "create" | "edit"; flavor?: HumorFlavor } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const supabase = createClient();
 
-  async function loadFlavors() {
-    const { data, error } = await supabase
-      .from("humor_flavors")
-      .select("*")
-      .order("id", { ascending: true });
-    if (error) setError(error.message);
-    else setFlavors(data ?? []);
-    setLoading(false);
-  }
-
-  useEffect(() => { loadFlavors(); }, []);
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("humor_flavors")
+        .select("id, slug, description, created_datetime_utc")
+        .order("created_datetime_utc", { ascending: false });
+      if (error) setError(error.message);
+      else setFlavors(data ?? []);
+      setLoading(false);
+    })();
+  }, []);
 
   async function handleDelete(id: number) {
     if (!confirm("Delete this humor flavor? This will also delete all its steps.")) return;
@@ -198,23 +158,25 @@ export default function HumorFlavorsPage() {
   const filtered = flavors.filter(
     (f) =>
       !search ||
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.slug.toLowerCase().includes(search.toLowerCase()) ||
       (f.description ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div style={{ padding: "36px 40px" }}>
-      {showCreate && (
-        <CreateFlavorModal
-          onClose={() => setShowCreate(false)}
-          onCreated={(f) => { setFlavors((prev) => [...prev, f]); setShowCreate(false); }}
-        />
-      )}
-      {editFlavor && (
-        <EditFlavorModal
-          flavor={editFlavor}
-          onClose={() => setEditFlavor(null)}
-          onUpdated={(f) => { setFlavors((prev) => prev.map((x) => (x.id === f.id ? f : x))); setEditFlavor(null); }}
+      {modal && (
+        <FlavorModal
+          mode={modal.mode}
+          flavor={modal.flavor}
+          onClose={() => setModal(null)}
+          onSave={(f) => {
+            setFlavors((prev) =>
+              modal.mode === "create"
+                ? [f, ...prev]
+                : prev.map((x) => (x.id === f.id ? f : x))
+            );
+            setModal(null);
+          }}
         />
       )}
 
@@ -235,7 +197,7 @@ export default function HumorFlavorsPage() {
             placeholder="Search…"
             style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--input-border)", fontSize: 13, outline: "none", width: 200, background: "var(--input-bg)", color: "var(--text)" }}
           />
-          <button onClick={() => setShowCreate(true)} style={S.btn("primary")}>
+          <button onClick={() => setModal({ mode: "create" })} style={S.btn("primary")}>
             + New Flavor
           </button>
         </div>
@@ -269,10 +231,9 @@ export default function HumorFlavorsPage() {
                 flexWrap: "wrap",
               }}
             >
-              {/* Name + description */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 3 }}>
-                  {flavor.name}
+                  {flavor.slug}
                 </div>
                 {flavor.description && (
                   <div style={{ fontSize: 13, color: "var(--text3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 480 }}>
@@ -281,12 +242,10 @@ export default function HumorFlavorsPage() {
                 )}
               </div>
 
-              {/* Created at */}
               <div style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>
-                {new Date(flavor.created_at).toLocaleDateString()}
+                {new Date(flavor.created_datetime_utc).toLocaleDateString()}
               </div>
 
-              {/* Actions */}
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <Link
                   href={`/humor-flavors/${flavor.id}`}
@@ -294,7 +253,7 @@ export default function HumorFlavorsPage() {
                 >
                   Steps
                 </Link>
-                <button onClick={() => setEditFlavor(flavor)} style={S.btn("secondary", true)}>
+                <button onClick={() => setModal({ mode: "edit", flavor })} style={S.btn("secondary", true)}>
                   Edit
                 </button>
                 <button
