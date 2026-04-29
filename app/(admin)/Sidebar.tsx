@@ -13,6 +13,12 @@ const NAV = [
     ],
   },
   {
+    label: "Ratings",
+    items: [
+      { href: "/ratings", label: "Caption Ratings", icon: "◈" },
+    ],
+  },
+  {
     label: "Humor",
     items: [
       { href: "/humor-flavors", label: "Humor Flavors", icon: "◕" },

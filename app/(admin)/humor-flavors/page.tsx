@@ -132,6 +132,10 @@ export default function HumorFlavorsPage() {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<{ mode: "create" | "edit"; flavor?: HumorFlavor } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [duplicating, setDuplicating] = useState<HumorFlavor | null>(null);
+  const [dupSlug, setDupSlug] = useState("");
+  const [dupLoading, setDupLoading] = useState(false);
+  const [dupError, setDupError] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -145,6 +149,47 @@ export default function HumorFlavorsPage() {
       setLoading(false);
     })();
   }, []);
+
+  function openDuplicate(flavor: HumorFlavor) {
+    setDuplicating(flavor);
+    setDupSlug(`${flavor.slug}-copy`);
+    setDupError(null);
+  }
+
+  async function handleDuplicate() {
+    if (!duplicating || !dupSlug.trim()) return;
+    setDupLoading(true);
+    setDupError(null);
+
+    // 1. Create new flavor
+    const { data: newFlavor, error: flavorErr } = await supabase
+      .from("humor_flavors")
+      .insert({ slug: dupSlug.trim(), description: duplicating.description })
+      .select()
+      .single();
+
+    if (flavorErr) { setDupError(flavorErr.message); setDupLoading(false); return; }
+
+    // 2. Fetch all steps of the original flavor
+    const { data: steps, error: stepsErr } = await supabase
+      .from("humor_flavor_steps")
+      .select("order_by, description, llm_system_prompt, llm_user_prompt, llm_model_id, llm_input_type_id, llm_output_type_id, humor_flavor_step_type_id, llm_temperature")
+      .eq("humor_flavor_id", duplicating.id)
+      .order("order_by", { ascending: true });
+
+    if (stepsErr) { setDupError(stepsErr.message); setDupLoading(false); return; }
+
+    // 3. Insert copied steps under new flavor
+    if (steps && steps.length > 0) {
+      const copies = steps.map((s) => ({ ...s, humor_flavor_id: newFlavor.id }));
+      const { error: copyErr } = await supabase.from("humor_flavor_steps").insert(copies);
+      if (copyErr) { setDupError(copyErr.message); setDupLoading(false); return; }
+    }
+
+    setFlavors((prev) => [newFlavor as HumorFlavor, ...prev]);
+    setDuplicating(null);
+    setDupLoading(false);
+  }
 
   async function handleDelete(id: number) {
     if (!confirm("Delete this humor flavor? This will also delete all its steps.")) return;
@@ -164,6 +209,40 @@ export default function HumorFlavorsPage() {
 
   return (
     <div style={{ padding: "36px 40px" }}>
+      {/* Duplicate modal */}
+      {duplicating && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "32px 32px 28px", width: "100%", maxWidth: 460 }} className="animate-in">
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 6 }}>Duplicate Flavor</h2>
+            <p style={{ fontSize: 13, color: "var(--text3)", marginBottom: 20 }}>
+              Copying <strong style={{ color: "var(--text)" }}>{duplicating.slug}</strong> and all its steps.
+            </p>
+            <div style={{ marginBottom: 16 }}>
+              <label style={S.label}>New Flavor Name *</label>
+              <input
+                value={dupSlug}
+                onChange={(e) => setDupSlug(e.target.value)}
+                placeholder="e.g. deadpan-office-humor-v2"
+                style={S.input}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") handleDuplicate(); }}
+              />
+            </div>
+            {dupError && <p style={{ fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{dupError}</p>}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setDuplicating(null)} style={S.btn("secondary")}>Cancel</button>
+              <button
+                onClick={handleDuplicate}
+                disabled={dupLoading || !dupSlug.trim()}
+                style={{ ...S.btn("primary"), opacity: dupLoading || !dupSlug.trim() ? 0.6 : 1 }}
+              >
+                {dupLoading ? "Duplicating…" : "Duplicate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modal && (
         <FlavorModal
           mode={modal.mode}
@@ -255,6 +334,9 @@ export default function HumorFlavorsPage() {
                 </Link>
                 <button onClick={() => setModal({ mode: "edit", flavor })} style={S.btn("secondary", true)}>
                   Edit
+                </button>
+                <button onClick={() => openDuplicate(flavor)} style={S.btn("secondary", true)}>
+                  Duplicate
                 </button>
                 <button
                   onClick={() => handleDelete(flavor.id)}

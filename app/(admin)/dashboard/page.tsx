@@ -4,12 +4,15 @@ import Link from "next/link";
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const [{ count: flavorsCount }, { count: stepsCount }] = await Promise.all([
+  const [{ count: flavorsCount }, { count: stepsCount }, { count: votesCount }] = await Promise.all([
     supabase
       .from("humor_flavors")
       .select("*", { count: "exact", head: true }),
     supabase
       .from("humor_flavor_steps")
+      .select("*", { count: "exact", head: true }),
+    supabase
+      .from("caption_votes")
       .select("*", { count: "exact", head: true }),
   ]);
 
@@ -27,6 +30,13 @@ export default async function DashboardPage() {
       count: stepsCount ?? 0,
       icon: "◔",
       desc: "Individual chain steps",
+    },
+    {
+      href: "/ratings",
+      label: "Total Votes",
+      count: votesCount ?? 0,
+      icon: "◈",
+      desc: "Caption votes from users",
     },
     {
       href: "/test-flavor",
@@ -144,6 +154,20 @@ export default async function DashboardPage() {
             }}
           >
             Manage Flavors
+          </Link>
+          <Link
+            href="/ratings"
+            style={{
+              padding: "8px 16px",
+              background: "var(--btn-secondary-bg)",
+              color: "var(--btn-secondary-text)",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            View Ratings
           </Link>
           <Link
             href="/test-flavor"
