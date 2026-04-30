@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-client";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const isUnauthorized = searchParams.get("error") === "unauthorized";
   const supabase = createClient();
 
   async function handleGoogleLogin() {
@@ -81,12 +84,29 @@ export default function LoginPage() {
           style={{
             fontSize: 14,
             color: "rgba(255,255,255,0.4)",
-            margin: "0 0 36px",
+            margin: "0 0 24px",
             lineHeight: 1.6,
           }}
         >
           Access requires a superadmin or matrix admin account.
         </p>
+
+        {isUnauthorized && (
+          <div
+            style={{
+              background: "#3f1f0a",
+              border: "1px solid #92400e",
+              borderRadius: 8,
+              padding: "10px 14px",
+              marginBottom: 20,
+              fontSize: 13,
+              color: "#fcd34d",
+              textAlign: "left",
+            }}
+          >
+            ⚠️ Your account doesn't have admin access. Sign in with a superadmin or matrix admin account.
+          </div>
+        )}
 
         {error && (
           <div

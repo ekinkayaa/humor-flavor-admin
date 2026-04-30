@@ -20,7 +20,8 @@ export default async function AdminLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_superadmin && !profile?.is_matrix_admin) redirect("/login");
+  if (!profile?.is_superadmin && !profile?.is_matrix_admin)
+    redirect("/login?error=unauthorized");
 
   const name = [profile.first_name, profile.last_name]
     .filter(Boolean)
