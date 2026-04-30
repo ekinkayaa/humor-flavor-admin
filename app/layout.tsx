@@ -3,8 +3,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme";
 
 export const metadata: Metadata = {
-  title: "Humor Flavor Admin",
-  description: "Manage humor flavors and generate captions",
+  title: "Prompt Chain Studio",
+  description: "Manage prompt chains, humor flavors, and generate captions",
 };
 
 export default function RootLayout({

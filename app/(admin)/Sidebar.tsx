@@ -80,7 +80,7 @@ export default function Sidebar({
             letterSpacing: "-0.01em",
           }}
         >
-          Humor Flavor Admin
+          Prompt Chain Studio
         </div>
         <div
           style={{

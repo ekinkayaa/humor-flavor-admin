@@ -62,7 +62,7 @@ export default async function DashboardPage() {
           Dashboard
         </h1>
         <p style={{ fontSize: 14, color: "var(--text3)", margin: 0 }}>
-          Humor Flavor Admin Panel
+          Prompt chain management for almostcrackd.ai
         </p>
       </div>
 

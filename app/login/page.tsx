@@ -74,7 +74,7 @@ export default function LoginPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          Humor Flavor Admin
+          Prompt Chain Studio
         </h1>
 
         <p
