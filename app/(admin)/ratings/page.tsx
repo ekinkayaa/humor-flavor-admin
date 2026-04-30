@@ -28,23 +28,25 @@ interface CaptionStat {
 export default async function RatingsPage() {
   const supabase = await createClient();
 
-  const [votesRes, flavorsRes] = await Promise.all([
+  const [totalRes, upvoteRes, flavorsRes, votesRes] = await Promise.all([
+    // Exact counts via DB — not affected by row limit
+    supabase.from("caption_votes").select("*", { count: "exact", head: true }),
+    supabase.from("caption_votes").select("*", { count: "exact", head: true }).eq("vote_value", 1),
+    supabase.from("humor_flavors").select("id, slug").order("slug"),
+    // Full data for breakdowns — override default 1000-row cap
     supabase
       .from("caption_votes")
-      .select("caption_id, vote_value, profile_id, captions(content, humor_flavor_id)"),
-    supabase
-      .from("humor_flavors")
-      .select("id, slug")
-      .order("slug"),
+      .select("caption_id, vote_value, profile_id, captions(content, humor_flavor_id)")
+      .range(0, 49999),
   ]);
 
   const votes = (votesRes.data ?? []) as unknown as VoteRow[];
   const flavors = (flavorsRes.data ?? []) as { id: number; slug: string }[];
 
-  // ── Summary stats ──────────────────────────────────────────────
-  const total = votes.length;
-  const upvotes = votes.filter((v) => v.vote_value > 0).length;
-  const downvotes = votes.filter((v) => v.vote_value < 0).length;
+  // ── Summary stats (from exact DB counts, not row-limited array) ─
+  const total = totalRes.count ?? 0;
+  const upvotes = upvoteRes.count ?? 0;
+  const downvotes = total - upvotes;
   const uniqueRaters = new Set(votes.map((v) => v.profile_id)).size;
   const uniqueCaptions = new Set(votes.map((v) => v.caption_id)).size;
 
