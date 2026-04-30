@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div style={{ padding: "40px 44px", maxWidth: 1100 }}>
+    <div style={{ padding: "36px 40px", maxWidth: "100%", boxSizing: "border-box" }}>
 
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 32 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16, marginBottom: 24 }}>
         {stats.map((s) => (
           <Link
             key={s.label}
@@ -156,7 +156,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Two-column bottom */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 20 }}>
 
         {/* Recent Flavors */}
         <div style={{
